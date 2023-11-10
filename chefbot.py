@@ -47,7 +47,7 @@ def fetch_recipe(dish: str, index: int):
     pprint(response.text)
 
 
-def download_recipie(dish: str, index: int, favourite: bool = False):
+def download_recipe(dish: str, index: int, favourite: bool = False):
     """Download the recipe locally.
 
     Args:
@@ -75,6 +75,28 @@ def download_recipie(dish: str, index: int, favourite: bool = False):
     else:
         print(response)
 
+
+def search_with_ingredients(ingredients: list):
+    """Search for recipes based on a list of ingredients.
+    Args:
+        ingredients (list): A list of ingredients to search for.
+    Returns:
+        dict: A JSON object containing the search results if successful, None otherwise."""
+    
+    headers = {
+    'accept': 'application/json',
+    'content-type': 'application/x-www-form-urlencoded',
+    }
+    params = {
+        'ingredients': ingredients,
+    }
+
+    response = requests.post('http://192.168.0.36:6969/chefbot/ingredient_search', params=params, headers=headers)
+    if len(response > 1):
+        return response.json()
+    else:
+        return None
+
 def cook(dish: str, index: int):
     """The magnum opus of this script. the robot arm will go through the recipe of the dish we want to make and recognize the ingedrients and cook it for us. Then clear the table and delete the files in the recpies folder.
 
@@ -91,5 +113,5 @@ def clear_the_table():
     for file in os.listdir(markdown_file_path):
         os.remove(os.path.join(markdown_file_path, file))
 
-download_recipie(args.dishname, True)
+download_recipe(args.dishname, True)
 clear_the_table()
