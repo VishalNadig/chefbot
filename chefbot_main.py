@@ -136,9 +136,7 @@ def download_recipe(dish: str, index_number: int):
         instructions = dish_matches.loc[index_number, "TranslatedInstructions"]
         for ingredient in ingredients.split(","):
             ingredients_str += "* " + ingredient+"\n"
-        print(ingredients_str)
         if "/" or "/ " in chosen_dish:
-            print(True)
             chosen_dish = chosen_dish.replace("/", "")
         with open(
             rf"{MARKDOWN_FILE_PATH}/{chosen_dish}.md",
@@ -192,7 +190,6 @@ def search_with_ingredients(ingredients: list):
             dish_name = int(input("Enter the index number of the dish you would like to make: "))
             if dish_name in range(1, len(dish_names)+1):
                 cleaned_dish_name = dish_names[dish_name-1].replace('/', '').split("- ")[1]
-                print(cleaned_dish_name)
                 if f"{MARKDOWN_FILE_PATH}/{cleaned_dish_name}.md" in os.listdir(MARKDOWN_FILE_PATH):
                     os.system(f"code '{MARKDOWN_FILE_PATH}/{cleaned_dish_name}.md'")
                     return {200: f"You have chosen to make {cleaned_dish_name}. You can find it in {MARKDOWN_FILE_PATH}"}
@@ -249,6 +246,7 @@ def add_recipes(recipe_name: str, ingredients: list, cooking_time: int, cuisine:
     dataframe = dataframe.sort_values(by=["TotalTimeInMins"])
     new_recipe = pd.DataFrame([[recipe_name, ingredients, cooking_time, cuisine, translated_instructions, cleaned_ingredients, len(cleaned_ingredients)]], columns=dataframe.columns)
     dataframe = pd.concat([dataframe, new_recipe], ignore_index=True)
+    dataframe= update_dataframe(dataframe)
     dataframe.to_csv(fr"/home/vishal/git/chefbot/{CSV_FILE}", index=False)
 
 
@@ -299,6 +297,37 @@ def convert_minutes_to_hours(minutes):
     hours, minutes = divmod(time_delta.seconds, 3600)
 
     return hours
+
+def update_category(row):
+    """
+    Updates the category of a row based on the value in the 'TranslatedRecipeName' column.
+
+    Parameters:
+        row (pandas.Series): A row of a pandas DataFrame containing recipe information.
+
+    Returns:
+        str: The updated category of the row.
+    """
+    if 'Cow' in row['TranslatedRecipeName']:
+        return 'Non Veg'
+    else:
+        return row['Category']
+
+
+def update_dataframe(dataframe):
+    """
+    Updates the dataframe by applying the update_category function to each row.
+
+    Parameters:
+        dataframe (pandas.DataFrame): The dataframe to be updated.
+
+    Returns:
+        pandas.DataFrame: The updated dataframe.
+    """
+    dataframe['Category'] = dataframe.apply(update_category, axis=1)
+    dataframe.to_csv(r"/home/vishal/git/chefbot/Modified_Indian_Food_Dataset.csv", index=False)
+    return dataframe
+
 
 if __name__ == "__main__":
     pprint(fetch_recipe(dish="Dosa", index_number=26))
