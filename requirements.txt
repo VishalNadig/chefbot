@@ -1,5 +1,0 @@
-pandas
-fastapi
-matplotlib
-numpy
-opencv-python

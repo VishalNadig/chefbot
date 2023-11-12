@@ -92,17 +92,23 @@ def fetch_recipe(dish: str, index_number: int):
     chosen_dish = filtered_dataframe.iloc[index_number - 1]["TranslatedRecipeName"]
     minutes = filtered_dataframe.iloc[index_number - 1]["TotalTimeInMins"]
     hours = convert_minutes_to_hours(minutes)
+    if "/" in chosen_dish:
+        chosen_dish = chosen_dish.replace("/", "")
     markdown_file_path = f"{MARKDOWN_FILE_PATH}/{chosen_dish}.md"
     ingredients = filtered_dataframe.iloc[index_number - 1]["Cleaned-Ingredients"]
+    instructions = filtered_dataframe.iloc[index_number - 1]["TranslatedInstructions"]
     if os.path.isfile(markdown_file_path):
         return FileResponse(markdown_file_path)
     else:
         ingredients_str = ""
+        instructions_str = ""
+        for instruction in instructions.split("."):
+            instructions_str += "* " + instruction + ".\n"
         for ingredient in ingredients.split(","):
             ingredients_str += "* " + ingredient+"\n"
+        
         with open(markdown_file_path, "w") as file:
-            print(ingredients_str)
-            file.write(f"""# {chosen_dish}\n\n## Cooking time: {minutes} minutes ({hours}H {int(minutes%60)}M).\n\n## Ingredients:\n{ingredients_str}\n\n## Cooking Instructions:\n{filtered_dataframe.iloc[index_number - 1]["TranslatedInstructions"]}""")
+            file.write(f"""# {chosen_dish}\n\n## Cooking time: {minutes} minutes ({hours}H {int(minutes%60)}M).\n\n## Ingredients:\n{ingredients_str}\n\n## Cooking Instructions:\n{instructions_str}""")
         return FileResponse(markdown_file_path)
 
 
@@ -131,7 +137,8 @@ def download_recipe(dish: str, index_number: int):
         for ingredient in ingredients.split(","):
             ingredients_str += "* " + ingredient+"\n"
         print(ingredients_str)
-        if "/" in chosen_dish:
+        if "/" or "/ " in chosen_dish:
+            print(True)
             chosen_dish = chosen_dish.replace("/", "")
         with open(
             rf"{MARKDOWN_FILE_PATH}/{chosen_dish}.md",
@@ -286,7 +293,7 @@ def convert_minutes_to_hours(minutes):
         int: The corresponding number of hours.
     """
     # Create a timedelta object with the specified number of minutes
-    time_delta = timedelta(minutes=minutes)
+    time_delta = timedelta(minutes=int(minutes))
 
     # Extract hours and minutes from the timedelta
     hours, minutes = divmod(time_delta.seconds, 3600)
