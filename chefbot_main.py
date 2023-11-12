@@ -81,30 +81,29 @@ def fetch_recipe(dish: str, index_number: int):
     Returns:
         Recipe for the dish.
     """
-    dish_dictionary = {}
     dataframe = pd.read_csv(CSV_FILE)
     dataframe = dataframe.sort_values(by=["TotalTimeInMins"])
     dataframe.dropna(inplace=True)
     filtered_dataframe = dataframe[dataframe["TranslatedRecipeName"].str.contains(dish.title())]
-    dish_dictionary = {count: [dishes] for count, dishes in enumerate(filtered_dataframe["TranslatedRecipeName"], 1)}
 
-    if len(dish_dictionary) > 0 and index_number in dish_dictionary.keys():
-        chosen_dish = dish_dictionary[int(index_number)][0]
-        df_new = dataframe[dataframe["TranslatedRecipeName"] == chosen_dish]
-        index = df_new.index[0]
-        dictionary = df_new.to_dict()
-        markdown_file_path = f"{MARKDOWN_FILE_PATH}/{chosen_dish}.md"
-        if os.path.isfile(markdown_file_path):
-            return FileResponse(markdown_file_path)
-        else:
-
-            minutes = dictionary['TotalTimeInMins'][index]
-            hours = convert_minutes_to_hours(minutes)
-            with open(markdown_file_path, "w") as file:
-                file.write(f"""# {chosen_dish}\n\n## Cooking time: {dictionary['TotalTimeInMins'][index]} minutes ({hours}H {int(minutes%60)}M).\n\n## Ingredients:\n{dictionary['Cleaned-Ingredients'][index]}\n\n## Cooking Instructions:\n{dictionary['TranslatedInstructions'][index]}""")
-            return FileResponse(markdown_file_path)
-    else:
+    if filtered_dataframe.empty:
         return {404: "Sorry, we don't have what you are looking for!"}
+
+    chosen_dish = filtered_dataframe.iloc[index_number - 1]["TranslatedRecipeName"]
+    minutes = filtered_dataframe.iloc[index_number - 1]["TotalTimeInMins"]
+    hours = convert_minutes_to_hours(minutes)
+    markdown_file_path = f"{MARKDOWN_FILE_PATH}/{chosen_dish}.md"
+    ingredients = filtered_dataframe.iloc[index_number - 1]["Cleaned-Ingredients"]
+    if os.path.isfile(markdown_file_path):
+        return FileResponse(markdown_file_path)
+    else:
+        ingredients_str = ""
+        for ingredient in ingredients.split(","):
+            ingredients_str += "* " + ingredient+"\n"
+        with open(markdown_file_path, "w") as file:
+            print(ingredients_str)
+            file.write(f"""# {chosen_dish}\n\n## Cooking time: {minutes} minutes ({hours}H {int(minutes%60)}M).\n\n## Ingredients:\n{ingredients_str}\n\n## Cooking Instructions:\n{filtered_dataframe.iloc[index_number - 1]["TranslatedInstructions"]}""")
+        return FileResponse(markdown_file_path)
 
 
 def download_recipe(dish: str, index_number: int):
@@ -123,11 +122,15 @@ def download_recipe(dish: str, index_number: int):
     dish_matches = dataframe[dataframe["TranslatedRecipeName"].str.contains(dish.title())]
     dish_matches = dish_matches.reset_index(drop=True)
     if not dish_matches.empty:
+        ingredients_str = ""
         chosen_dish = dish_matches.loc[index_number, "TranslatedRecipeName"]
         cooking_time = dish_matches.loc[index_number, "TotalTimeInMins"]
         hours = convert_minutes_to_hours(cooking_time)
         ingredients = dish_matches.loc[index_number, "Cleaned-Ingredients"]
         instructions = dish_matches.loc[index_number, "TranslatedInstructions"]
+        for ingredient in ingredients.split(","):
+            ingredients_str += "* " + ingredient+"\n"
+        print(ingredients_str)
         if "/" in chosen_dish:
             chosen_dish = chosen_dish.replace("/", "")
         with open(
@@ -135,7 +138,7 @@ def download_recipe(dish: str, index_number: int):
             "w",
         ) as file:
             file.write(
-                f"""# {chosen_dish}\n\n## Cooking time: {cooking_time} minutes ({hours}H {int(cooking_time%60)}M).\n\n## Ingredients:\n{ingredients}\n\n## Cooking Instructions:\n{instructions}"""
+                f"""# {chosen_dish}\n\n## Cooking time: {cooking_time} minutes ({hours}H {int(cooking_time%60)}M).\n\n## Ingredients:\n{ingredients_str}\n\n## Cooking Instructions:\n{instructions}"""
             )
         return FileResponse(
             f"{MARKDOWN_FILE_PATH}/{chosen_dish}.md",
@@ -291,4 +294,4 @@ def convert_minutes_to_hours(minutes):
     return hours
 
 if __name__ == "__main__":
-    pprint(fetch_recipe(dish="Dosa", index_number=51))
+    pprint(fetch_recipe(dish="Dosa", index_number=26))
