@@ -23,17 +23,12 @@ def fetch_the_menu(dish: str = None):
     Returns:
         Dictionary of dishes.
     """
-    count = 1
     dish_dictionary = {}
     dataframe = pd.read_csv(CSV_FILE)
-    dataframe = dataframe.sort_values(by=["TotalTimeInMins"])
-    dataframe.dropna(inplace=True)
-    for dishes in dataframe["TranslatedRecipeName"]:
-        if dish.title() in dishes:
-            dish_dictionary[count] = dishes
-            count += 1
+    filtered_data = dataframe[dataframe["TranslatedRecipeName"].str.contains(dish.title())]
+    dish_dictionary = {i+1: dish for i, dish in enumerate(filtered_data["TranslatedRecipeName"])}
 
-    if len(dish_dictionary) > 0:
+    if dish_dictionary:
         return dish_dictionary
     else:
         return {404: "Sorry, we don't have what you are looking for!"}
@@ -247,7 +242,7 @@ def add_recipes(recipe_name: str, ingredients: list, cooking_time: int, cuisine:
     new_recipe = pd.DataFrame([[recipe_name, ingredients, cooking_time, cuisine, translated_instructions, cleaned_ingredients, len(cleaned_ingredients)]], columns=dataframe.columns)
     dataframe = pd.concat([dataframe, new_recipe], ignore_index=True)
     dataframe= update_dataframe(dataframe)
-    dataframe.to_csv(fr"/home/vishal/git/chefbot/{CSV_FILE}", index=False)
+    dataframe.to_csv(fr"{CSV_FILE}", index=False)
 
 
 def get_recipes_with_cuisine(cuisine: str = None):
@@ -311,7 +306,7 @@ def update_category(row):
     if 'Cow' in row['TranslatedRecipeName']:
         return 'Non Veg'
     else:
-        return row['Category']
+        return 'Veg'
 
 
 def update_dataframe(dataframe):
@@ -325,9 +320,8 @@ def update_dataframe(dataframe):
         pandas.DataFrame: The updated dataframe.
     """
     dataframe['Category'] = dataframe.apply(update_category, axis=1)
-    dataframe.to_csv(r"/home/vishal/git/chefbot/Modified_Indian_Food_Dataset.csv", index=False)
     return dataframe
 
 
 if __name__ == "__main__":
-    pprint(fetch_recipe(dish="Dosa", index_number=26))
+    pprint(fetch_the_menu(dish="Shakshuka"))
