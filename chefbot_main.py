@@ -9,8 +9,9 @@ from pprint import pprint
 from datetime import datetime, timedelta
 import cv2 as cv
 
+HOME = os.path.expanduser("~")
 CSV_FILE = r"Modified_Indian_Food_Dataset.csv"
-MARKDOWN_FILE_PATH = r"recipes"
+MARKDOWN_FILE_PATH = os.path.join(HOME, r"recipes")
 IMAGE_DIRECTORY = r"images/"
 
 
@@ -66,7 +67,7 @@ def pie_chart(dish: str):
     return StreamingResponse(buffer, media_type="image/png")
 
 
-def fetch_recipe(dish: str, index_number: int):
+def fetch_recipe(dish: str, index_number: int = None):
     """Return the recipe for the dish entered. On the console.
 
     Args:
@@ -76,6 +77,9 @@ def fetch_recipe(dish: str, index_number: int):
     Returns:
         Recipe for the dish.
     """
+    pprint(fetch_the_menu(dish=dish))
+    if not index_number:
+        index_number = int(input("Please enter the index number of the dish you would like to make: "))
     dataframe = pd.read_csv(CSV_FILE)
     dataframe = dataframe.sort_values(by=["TotalTimeInMins"])
     dataframe.dropna(inplace=True)
@@ -90,6 +94,8 @@ def fetch_recipe(dish: str, index_number: int):
     if "/" in chosen_dish:
         chosen_dish = chosen_dish.replace("/", "")
     markdown_file_path = f"{MARKDOWN_FILE_PATH}/{chosen_dish}.md"
+    if not os.path.exists(markdown_file_path):
+        os.makedirs(MARKDOWN_FILE_PATH, exist_ok=True)
     ingredients = filtered_dataframe.iloc[index_number - 1]["Cleaned-Ingredients"]
     instructions = filtered_dataframe.iloc[index_number - 1]["TranslatedInstructions"]
     if os.path.isfile(markdown_file_path):
@@ -98,10 +104,13 @@ def fetch_recipe(dish: str, index_number: int):
         ingredients_str = ""
         instructions_str = ""
         for instruction in instructions.split("."):
+            if "\n" in instruction:
+                instruction = instruction.replace("\n", "")
+            print(instruction+'.')
             instructions_str += "* " + instruction + ".\n"
         for ingredient in ingredients.split(","):
-            ingredients_str += "* " + ingredient+"\n"
-        
+            ingredients_str += "\n* " + ingredient
+
         with open(markdown_file_path, "w") as file:
             file.write(f"""# {chosen_dish}\n\n## Cooking time: {minutes} minutes ({hours}H {int(minutes%60)}M).\n\n## Ingredients:\n{ingredients_str}\n\n## Cooking Instructions:\n{instructions_str}""")
         return FileResponse(markdown_file_path)
@@ -177,7 +186,7 @@ def search_with_ingredients(ingredients: list):
     dataframe = dataframe.sort_values(by=["TotalTimeInMins"])
     dataframe.dropna(inplace=True)
     contains = [dataframe['Cleaned-Ingredients'].str.contains(ingredient) for ingredient in ingredients]
-    result = dataframe[np.all(contains, axis=0)] 
+    result = dataframe[np.all(contains, axis=0)]
     dish_names = fetch_menu_names(result)
     if len(dish_names) > 0:
         pprint(dish_names)
@@ -248,22 +257,22 @@ def add_recipes(recipe_name: str, ingredients: list, cooking_time: int, cuisine:
 def get_recipes_with_cuisine(cuisine: str = None):
     """
     Retrieves recipes with a specified cuisine.
-    
+
     Args:
-        cuisine (str, optional): The cuisine to filter the recipes by. 
+        cuisine (str, optional): The cuisine to filter the recipes by.
             Defaults to None.
-            
+
     Returns:
-        dict or set: If a cuisine is specified, a dictionary containing 
-            recipe names as values and an incremental count as keys. 
-            If no cuisine is specified or cuisine is empty, a set of 
+        dict or set: If a cuisine is specified, a dictionary containing
+            recipe names as values and an incremental count as keys.
+            If no cuisine is specified or cuisine is empty, a set of
             unique cuisines available in the dataset.
     """
     cuisine_set = set()
     return_dictionary = {}
     dataframe = pd.read_csv(CSV_FILE)
     dataframe = dataframe.sort_values(by=["Ingredient-count"])
-    
+
     if cuisine and cuisine.strip():
         cuisine = cuisine.title()
         cuisine_data = dataframe[dataframe["Cuisine"] == cuisine]
@@ -324,4 +333,4 @@ def update_dataframe(dataframe):
 
 
 if __name__ == "__main__":
-    pprint(fetch_the_menu(dish="Shakshuka"))
+    fetch_recipe(dish="Shakshuka")
