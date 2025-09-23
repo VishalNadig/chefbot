@@ -1,23 +1,20 @@
 import os
 import pandas as pd
-from fastapi import File, UploadFile
-from fastapi.responses import FileResponse, StreamingResponse
 import matplotlib.pyplot as plt
-from io import BytesIO
 import numpy as np
+from fastapi.responses import FileResponse, StreamingResponse
+from io import BytesIO
 from pprint import pprint
-from datetime import datetime, timedelta
-import cv2 as cv
-
-
+from datetime import timedelta
 class Chefbot():
     def __init__(self):
         self.HOME = os.path.expanduser("~")
-        self.CSV_FILE = r"Modified_Indian_Food_Dataset.csv"
+        self.CSV_FILE = os.path.join(os.path.dirname(__file__), r"Modified_Indian_Food_Dataset.csv")
         self.MARKDOWN_FILE_PATH = os.path.join(self.HOME, r"recipes")
         self.IMAGE_DIRECTORY = r"images/"
         self.DATAFRAME = pd.read_csv(self.CSV_FILE)
         self.DATAFRAME.sort_values(by=["TotalTimeInMins"])
+
 
     def fetch_the_menu(self, dish: str = None):
         """Search for your favourite dish to make!
@@ -30,7 +27,6 @@ class Chefbot():
         """
         dish_dictionary = {}
         filtered_data = self.DATAFRAME[self.DATAFRAME["TranslatedRecipeName"].str.contains(dish.title())]
-        pprint(filtered_data)
         dish_dictionary = {i+1: dish for i, dish in enumerate(filtered_data["TranslatedRecipeName"])}
 
         if dish_dictionary:
@@ -68,7 +64,7 @@ class Chefbot():
         return StreamingResponse(buffer, media_type="image/png")
 
 
-    def fetch_recipe(self, dish: str, index_number: int = None):
+    def fetch_recipe(self, dish: str = None, index_number: int = None):
         """Return the recipe for the dish entered. On the console.
 
         Args:
@@ -78,6 +74,8 @@ class Chefbot():
         Returns:
             Recipe for the dish.
         """
+        if not dish:
+            dish = input("Please enter the dish you would like to make: ")
         data_dictionary = self.fetch_the_menu(dish=dish)
         pprint(data_dictionary)
         if not index_number:
@@ -105,7 +103,7 @@ class Chefbot():
             for instruction in instructions.split("."):
                 if "\n" in instruction:
                     instruction = instruction.replace("\n", "")
-                print(instruction+'.')
+                # print(instruction+'.')
                 instructions_str += "* " + instruction + ".\n"
             for ingredient in ingredients.split(","):
                 ingredients_str += "\n* " + ingredient
@@ -184,22 +182,22 @@ class Chefbot():
         result = self.DATAFRAME[np.all(contains, axis=0)]
         dish_names = self.fetch_menu_names(result)
         if len(dish_names) > 0:
+            print(f"The dishes you can make with the given ingredients {", ".join(ingredient.title() for ingredient in ingredients)} are: \n")
             pprint(dish_names)
             try:
-                dish_name = int(input("Enter the index number of the dish you would like to make: "))
-                if dish_name in range(1, len(dish_names)+1):
-                    cleaned_dish_name = dish_names[dish_name-1].replace('/', '').split("- ")[1]
+                dish_index = int(input("\nEnter the index number of the dish you would like to make: "))
+                if dish_index in dish_names.keys():
+                    cleaned_dish_name = dish_names[dish_index]#.replace('/', '').split("- ")
                     if f"{self.MARKDOWN_FILE_PATH}/{cleaned_dish_name}.md" in os.listdir(self.MARKDOWN_FILE_PATH):
-                        os.system(f"code '{self.MARKDOWN_FILE_PATH}/{cleaned_dish_name}.md'")
+                        # os.system(f"code '{self.MARKDOWN_FILE_PATH}/{cleaned_dish_name}.md'")
                         return {200: f"You have chosen to make {cleaned_dish_name}. You can find it in {self.MARKDOWN_FILE_PATH}"}
                     else:
-                        self.download_recipe(dish=cleaned_dish_name, index_number=1)
-                        os.system(f"code '{self.MARKDOWN_FILE_PATH}/{cleaned_dish_name}.md'")
+                        self.fetch_recipe(dish=cleaned_dish_name, index_number=1)
                         return {200: f"You have chosen to make {cleaned_dish_name}. You can find it in {self.MARKDOWN_FILE_PATH}"}
                 else:
                     return {404: "Sorry, we don't have what you are looking for!"}
-            except:
-                return {404: "Sorry, we don't have what you are looking for!"}
+            except Exception as e:
+                return {404: f"Sorry, we don't have what you are looking for! {e}" }
         else:
             return {404: "Sorry, we don't have what you are looking for!"}
 
@@ -214,7 +212,7 @@ class Chefbot():
         Returns:
             list: A list of menu names in the format "{count} - {dish_name}".
         """
-        dish_names = []
+        dish_names = {}
         count = 1
         dish_dictionary = dataframe.set_index("TranslatedRecipeName").T.to_dict("list")
         for dish_name in dish_dictionary.keys():
@@ -222,7 +220,7 @@ class Chefbot():
             if 404 in dish_name.keys():
                 continue
             else:
-                dish_names.append(f"{count} - {dish_name[1][0]}")
+                dish_names[count] = dish_name[1]
                 count+=1
         return dish_names
 
@@ -330,4 +328,7 @@ class Chefbot():
 
 if __name__ == "__main__":
     cb = Chefbot()
-    cb.fetch_recipe(dish="Shakshuka")
+    # pprint(cb.fetch_recipe(dish="salad"))
+    print(cb.search_with_ingredients(ingredients=['paneer', 'pizza']))
+
+#  TODO: Convert pandas to polars.
