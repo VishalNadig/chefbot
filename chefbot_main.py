@@ -1,3 +1,4 @@
+"""Chefbot is a python function that reads a dataset and helps you to make over 5000 dishes with recipes and detailed steps. It can offer a multitude of dishes based on your preference such as dosa, pasta, pizza, upma but also suggest dishes based on the ingredients you have available"""
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -332,7 +333,6 @@ class Chefbot():
 
 if __name__ == "__main__":
     cb = Chefbot()
-    cb.fetch_recipe(dish="dosa", index_number=63)
-    # print(cb.search_with_ingredients(ingredients=['basil']))
+    cb.fetch_recipe(dish="dosa")
 
 #  TODO: Convert pandas to polars.
