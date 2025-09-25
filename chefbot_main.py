@@ -77,8 +77,8 @@ class Chefbot():
         if not dish:
             dish = input("Please enter the dish you would like to make: ")
         data_dictionary = self.fetch_the_menu(dish=dish)
-        pprint(data_dictionary)
         if not index_number:
+            pprint(data_dictionary)
             index_number = int(input("Please enter the index number of the dish you would like to make: "))
         # self.DATAFRAME.dropna(inplace=True)
         filtered_dataframe = self.DATAFRAME[self.DATAFRAME["TranslatedRecipeName"].str.contains(dish.title())]
@@ -100,11 +100,14 @@ class Chefbot():
         else:
             ingredients_str = ""
             instructions_str = ""
+            print(instructions.split("."))
             for instruction in instructions.split("."):
                 if "\n" in instruction:
                     instruction = instruction.replace("\n", "")
-                # print(instruction+'.')
-                instructions_str += "* " + instruction + ".\n"
+                if "\r" in instruction:
+                    instruction = instruction.replace("\r", "")
+                if not instruction == "":
+                    instructions_str += "* " + instruction + ".\n"
             for ingredient in ingredients.split(","):
                 ingredients_str += "\n* " + ingredient
 
@@ -328,7 +331,7 @@ class Chefbot():
 
 if __name__ == "__main__":
     cb = Chefbot()
-    # pprint(cb.fetch_recipe(dish="salad"))
-    print(cb.search_with_ingredients(ingredients=['paneer', 'pizza']))
+    cb.fetch_recipe(dish="dosa", index_number=63)
+    # print(cb.search_with_ingredients(ingredients=['basil']))
 
 #  TODO: Convert pandas to polars.
