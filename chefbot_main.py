@@ -100,12 +100,13 @@ class Chefbot():
         else:
             ingredients_str = ""
             instructions_str = ""
-            print(instructions.split("."))
             for instruction in instructions.split("."):
                 if "\n" in instruction:
                     instruction = instruction.replace("\n", "")
                 if "\r" in instruction:
                     instruction = instruction.replace("\r", "")
+                if ";" in instruction:
+                    instruction = instruction.replace(";", ". ")
                 if not instruction == "":
                     instructions_str += "* " + instruction + ".\n"
             for ingredient in ingredients.split(","):
