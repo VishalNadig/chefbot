@@ -9,8 +9,8 @@ arguments.add_argument('-f', '--favorites', type= bool, help= "A general word of
 
 
 args = arguments.parse_args()
-markdown_file_path = r"/Users/akshathanadig/Downloads/git/chefbot/recipes/"
-favourites_folder = r"/Users/akshathanadig/Downloads/git/chefbot/favourite_recipes/"
+markdown_file_path = r"~/git/chefbot/recipes/"
+favourites_folder = r"~/Downloads/git/chefbot/favourite_recipes/"
 def fetch_the_menu(dish: str):
     """Fetch the menu of dishes we have available.
 

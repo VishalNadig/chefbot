@@ -101,7 +101,7 @@ def fetch_recipe(dish: str, index_number: int):
             instructions_str += "* " + instruction + ".\n"
         for ingredient in ingredients.split(","):
             ingredients_str += "* " + ingredient+"\n"
-        
+
         with open(markdown_file_path, "w") as file:
             file.write(f"""# {chosen_dish}\n\n## Cooking time: {minutes} minutes ({hours}H {int(minutes%60)}M).\n\n## Ingredients:\n{ingredients_str}\n\n## Cooking Instructions:\n{instructions_str}""")
         return FileResponse(markdown_file_path)
@@ -177,7 +177,7 @@ def search_with_ingredients(ingredients: list):
     dataframe = dataframe.sort_values(by=["TotalTimeInMins"])
     dataframe.dropna(inplace=True)
     contains = [dataframe['Cleaned-Ingredients'].str.contains(ingredient) for ingredient in ingredients]
-    result = dataframe[np.all(contains, axis=0)] 
+    result = dataframe[np.all(contains, axis=0)]
     dish_names = fetch_menu_names(result)
     if len(dish_names) > 0:
         pprint(dish_names)
@@ -248,22 +248,22 @@ def add_recipes(recipe_name: str, ingredients: list, cooking_time: int, cuisine:
 def get_recipes_with_cuisine(cuisine: str = None):
     """
     Retrieves recipes with a specified cuisine.
-    
+
     Args:
-        cuisine (str, optional): The cuisine to filter the recipes by. 
+        cuisine (str, optional): The cuisine to filter the recipes by.
             Defaults to None.
-            
+
     Returns:
-        dict or set: If a cuisine is specified, a dictionary containing 
-            recipe names as values and an incremental count as keys. 
-            If no cuisine is specified or cuisine is empty, a set of 
+        dict or set: If a cuisine is specified, a dictionary containing
+            recipe names as values and an incremental count as keys.
+            If no cuisine is specified or cuisine is empty, a set of
             unique cuisines available in the dataset.
     """
     cuisine_set = set()
     return_dictionary = {}
     dataframe = pd.read_csv(CSV_FILE)
     dataframe = dataframe.sort_values(by=["Ingredient-count"])
-    
+
     if cuisine and cuisine.strip():
         cuisine = cuisine.title()
         cuisine_data = dataframe[dataframe["Cuisine"] == cuisine]
